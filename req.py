@@ -97,8 +97,9 @@ def complete_registration(session_data):
         print("[!] Missing scnt or ssid in session data! Cannot continue.")
         return False
 
-    # Create Session
-    session = requests.Session(impersonate="firefox")
+    # Create Session - Match Browser Fingerprint
+    # SeleniumBase uses Chrome, so we must impersonate Chrome
+    session = requests.Session(impersonate="chrome124")
 
     # Add Cookies
     for name, value in session_data['cookies'].items():
@@ -118,17 +119,21 @@ def complete_registration(session_data):
     print(f"📅 Birthday: {BIRTHDAY}")
     print(f"📱 Phone: +{COUNTRY_DIAL_CODE} {PHONE_NUMBER}")
 
+    # Use captured language or fallback
+    lang = session_data.get('language', 'ar,en-US;q=0.9,en;q=0.8')
+    timezone = session_data.get('timezone', 'Africa/Cairo')
+
     # Headers
     common_headers = {
         "User-Agent": session_data['user_agent'],
         "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
+        "Accept-Language": lang,
         "Content-Type": "application/json",
         "Connection": "keep-alive",
         "Origin": "https://appleid.apple.com",
         "Referer": "https://appleid.apple.com/",
         "X-Apple-I-Request-Context": "account",
-        "X-Apple-I-TimeZone": "Africa/Cairo",
+        "X-Apple-I-TimeZone": timezone,
         "X-Apple-I-FD-Client-Info": session_data['fingerprint'],
         "X-Apple-Widget-Key": "af1139274f266b22b68c2a3e7ad932cb3c0bbe854e13a79af78dcc73136882c3",
         "scnt": session_data['scnt'],
