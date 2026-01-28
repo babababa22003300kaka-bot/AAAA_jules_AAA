@@ -72,24 +72,27 @@ def extract_session_from_browser():
                 session_data['cookies'][cookie['name']] = cookie['value']
             print(f"[+] Extracted {len(session_data['cookies'])} cookies")
 
-            # Extract Fingerprint
+            # Extract Fingerprint with retries
             print("[-] Extracting fingerprint from page...")
-            try:
-                fingerprint_script = """
-                try {
-                    if (window.__APPLE_CLIENT_INFO__) return JSON.stringify(window.__APPLE_CLIENT_INFO__);
-                    if (window.AppleIDAuthClientInfo) return JSON.stringify(window.AppleIDAuthClientInfo);
-                    return null;
-                } catch(e) {
-                    return null;
-                }
-                """
+            fingerprint_script = """
+            try {
+                if (window.__APPLE_CLIENT_INFO__) return JSON.stringify(window.__APPLE_CLIENT_INFO__);
+                if (window.AppleIDAuthClientInfo) return JSON.stringify(window.AppleIDAuthClientInfo);
+                return null;
+            } catch(e) {
+                return null;
+            }
+            """
+
+            # Attempt to get fingerprint multiple times
+            for _ in range(5):
                 fp = sb.execute_script(fingerprint_script)
                 if fp:
                     session_data['fingerprint'] = fp
                     print(f"[+] Found fingerprint in page context!")
-            except:
-                pass
+                    break
+                print("[-] Waiting for fingerprint generation...")
+                sb.sleep(2)
 
             # Switch to iframe to ensure it's loaded
             iframe = "iframe#aid-create-widget-iFrame"
@@ -137,32 +140,10 @@ def extract_session_from_browser():
             except Exception as e:
                 print(f"[!] XHR Error: {e}")
 
-            # Fallback for fingerprint construction if missing
             if not session_data['fingerprint']:
-                print("[-] Constructing fallback fingerprint...")
-                network_script = """
-                var entries = performance.getEntriesByType('resource');
-                return {
-                    userAgent: navigator.userAgent,
-                    language: navigator.language,
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    platform: navigator.platform,
-                    screen: screen.width + 'x' + screen.height
-                };
-                """
-                browser_info = sb.execute_script(network_script)
-
-                real_f = "Nla44j1e3NlY5BNlY5BSs5uQ084akLJ6O8To9idcJrKTgW.1LgJh46KZ7..f4AGGpO1.1em3.7Pm3.7Pm3.2KZ77M6pZ7.SbxO1.1Pm3.3jum3..pZ7.0ygW.3klYIU.KI5.jKXgW.0KO1.0elHoJSLFV.LgJh46KZ7.9f7F.Wf7F.KLFV.1gW01sygW.1KzLFV.agW.14zLFV.egW.2fxO108WY5BNlYJNNlY5QB4bVNjMk.Bpr"
-
-                fingerprint_obj = {
-                    "U": session_data['user_agent'],
-                    "L": browser_info.get('language', 'ar')[:2],
-                    "Z": "GMT+02:00",
-                    "V": "1.1",
-                    "F": real_f
-                }
-                session_data['fingerprint'] = json.dumps(fingerprint_obj, separators=(',', ':'))
-                print(f"[+] Built fingerprint from browser data")
+                print("[!] CRITICAL: Could not extract real fingerprint from browser!")
+                print("[!] Stopping to avoid account ban.")
+                return session_data
 
         except Exception as e:
             print(f"[!] Browser Error: {e}")
