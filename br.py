@@ -28,7 +28,11 @@ def extract_session_from_browser():
         'cookies': {},
         'scnt': None,
         'ssid': None,
-        'user_agent': None
+        'user_agent': None,
+        'language': None,
+        'timezone': None,
+        'screen_width': None,
+        'screen_height': None
     }
 
     with SB(uc=True, headless=HEADLESS) as sb:
@@ -37,9 +41,26 @@ def extract_session_from_browser():
             sb.uc_open_with_reconnect("https://account.apple.com/account", reconnect_time=4)
             sb.sleep(5)
 
-            # Extract User-Agent
-            session_data['user_agent'] = sb.execute_script("return navigator.userAgent;")
+            # Extract Browser Info
+            info_script = """
+            return {
+                ua: navigator.userAgent,
+                lang: navigator.language,
+                tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                w: screen.width,
+                h: screen.height
+            }
+            """
+            browser_info = sb.execute_script(info_script)
+            session_data['user_agent'] = browser_info['ua']
+            session_data['language'] = browser_info['lang']
+            session_data['timezone'] = browser_info['tz']
+            session_data['screen_width'] = browser_info['w']
+            session_data['screen_height'] = browser_info['h']
+
             print(f"[+] User-Agent: {session_data['user_agent'][:50]}...")
+            print(f"[+] Language: {session_data['language']}")
+            print(f"[+] Timezone: {session_data['timezone']}")
 
             # Wait for iframe to load
             print("[-] Waiting for iframe to load...")
