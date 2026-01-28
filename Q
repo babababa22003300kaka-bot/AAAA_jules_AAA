@@ -18,7 +18,7 @@ PHONE_NUMBER = f"112220{random.randint(1111, 9999)}"
 COUNTRY_CODE = "EG"          # للتليفون
 COUNTRY_ISO3 = "EGY"         # للعناوين والـ Prime
 COUNTRY_DIAL_CODE = "20"
-CAPTCHA_API_KEY = "24e088a6705474c23b42e3fcb4e6f5d0"
+CAPTCHA_API_KEY = " "
 
 # --- Helper Functions ---
 def gen_email():
